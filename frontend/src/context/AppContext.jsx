@@ -1,12 +1,47 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import api from '../config/api.js'
 
 const AppContext = createContext()
+const ROOT_BREADCRUMB = [{ id: null, name: 'My Drive' }]
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
+  // Global upload state
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+
+  // Drive view state
+  const [currentFolderID, setCurrentFolderID] = useState(null)
+  const [breadcrumbs, setBreadcrumbs] = useState(ROOT_BREADCRUMB)
+  const [folders, setFolders] = useState([])
+  const [files, setFiles] = useState([])
+  const [isDriveLoading, setIsDriveLoading] = useState(false)
+
+  // Filters and sorting state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState('name_asc')
+
+  // Refresh user profile and storage status
+  const refreshUser = useCallback(async () => {
+    try {
+      const { data } = await api.get('/api/auth/me')
+      setUser(data.user)
+      return data.user
+    } catch (error) {
+      setUser(null)
+      return null
+    }
+  }, [])
+
+  // Check authentication status when the application loads
+  useEffect(() => {
+    refreshUser().finally(() => setIsLoading(false))
+  }, [refreshUser])
+
+  // Handle login and registration requests
   const authAction = async (requestFn, successMsg, errorFallback) => {
     try {
       const { data } = await requestFn()
@@ -19,11 +54,16 @@ export const AppProvider = ({ children }) => {
 
       return true
     } catch (error) {
-      toast.error(error.response?.data?.message || errorFallback)
+      toast.error(
+        error.response?.data?.message ||
+        errorFallback ||
+        'Something went wrong'
+      )
       return false
     }
   }
 
+  // Login user
   const login = (email, password) => {
     return authAction(
       () => api.post('/api/auth/login', { email, password }),
@@ -32,6 +72,7 @@ export const AppProvider = ({ children }) => {
     )
   }
 
+  // Register new user
   const register = (name, email, password) => {
     return authAction(
       () => api.post('/api/auth/register', { name, email, password }),
@@ -40,6 +81,7 @@ export const AppProvider = ({ children }) => {
     )
   }
 
+  // Logout current user
   const logout = async () => {
     try {
       await api.post('/api/auth/logout')
@@ -52,12 +94,84 @@ export const AppProvider = ({ children }) => {
     }
   }
 
+  // Fetch folders, files and breadcrumb information
+  const fetchDriveContent = useCallback(
+    async (
+      folderId = currentFolderID,
+      search = searchQuery,
+      sort = sortBy
+    ) => {
+      if (!user) return
+
+      setIsDriveLoading(true)
+
+      try {
+        const parentParam = folderId || 'null'
+
+        const [folderRes, fileRes, detailRes] = await Promise.all([
+          api.get('/api/folders', {
+            params: {
+              parent_id: parentParam,
+            },
+          }),
+
+          api.get('/api/files', {
+            params: {
+              folder_id: parentParam,
+              search,
+              sort,
+            },
+          }),
+
+          folderId
+            ? api.get(`/api/folders/${folderId}`)
+            : null,
+        ])
+
+        setFolders(folderRes.data.folders)
+        setFiles(fileRes.data.files)
+
+        setBreadcrumbs(
+          detailRes?.data?.breadcrumbs || ROOT_BREADCRUMB
+        )
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message ||
+          'Failed to load drive content'
+        )
+      } finally {
+        setIsDriveLoading(false)
+      }
+    },
+    [user, currentFolderID, searchQuery, sortBy]
+  )
+
   const value = {
     user,
     setUser,
     login,
     logout,
     register,
+    isLoading,
+    isAuthenticated: !!user,
+    isUploading,
+    setIsUploading,
+    uploadProgress,
+    setUploadProgress,
+    currentFolderID,
+    setCurrentFolderID,
+    breadcrumbs,
+    setBreadcrumbs,
+    folders,
+    setFolders,
+    files,
+    setFiles,
+    isDriveLoading,
+    searchQuery,
+    setSearchQuery,
+    sortBy,
+    setSortBy,
+    fetchDriveContent,
   }
 
   return (
