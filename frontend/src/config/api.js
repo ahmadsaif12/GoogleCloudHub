@@ -174,10 +174,30 @@ api.defaults.adapter = async (config) => {
         const folders = getFolders();
         const index = folders.findIndex((f) => f.id === id);
         if (index !== -1) {
-            folders[index].parent_id = targetParentId;
-            folders[index].updated_at = new Date().toISOString();
-            saveFolders(folders);
-            responseData = { folder: folders[index] };
+            const targetParent = targetParentId
+                ? folders.find((folder) => folder.id === targetParentId)
+                : null;
+            if (targetParentId && (!targetParent || targetParentId === id || (targetParent.path || []).includes(id))) {
+                status = 400;
+                responseData = { error: "Invalid destination folder" };
+            } else {
+                folders[index].parent_id = targetParentId;
+                folders[index].path = targetParent ? [...(targetParent.path || []), targetParent.id] : [];
+                folders[index].updated_at = new Date().toISOString();
+
+                const updateDescendantPaths = (parent) => {
+                    folders
+                        .filter((folder) => folder.parent_id === parent.id)
+                        .forEach((child) => {
+                            child.path = [...(parent.path || []), parent.id];
+                            child.updated_at = new Date().toISOString();
+                            updateDescendantPaths(child);
+                        });
+                };
+                updateDescendantPaths(folders[index]);
+                saveFolders(folders);
+                responseData = { folder: folders[index] };
+            }
         } else {
             status = 404;
             responseData = { error: "Folder not found" };

@@ -128,11 +128,24 @@ export const AppProvider = ({ children }) => {
             : null,
         ])
 
-        setFolders(folderRes.data.folders)
+        const matchingFolders = search
+          ? folderRes.data.folders.filter((folder) =>
+              folder.name.toLowerCase().includes(search.toLowerCase())
+            )
+          : folderRes.data.folders
+
+        setFolders(matchingFolders)
         setFiles(fileRes.data.files)
 
+        const currentFolder = detailRes?.data?.folder
         setBreadcrumbs(
-          detailRes?.data?.breadcrumbs || ROOT_BREADCRUMB
+          currentFolder
+            ? [
+                ...ROOT_BREADCRUMB,
+                ...(detailRes.data.breadcrumbs || []),
+                { id: currentFolder.id, name: currentFolder.name },
+              ]
+            : ROOT_BREADCRUMB
         )
       } catch (error) {
         toast.error(
@@ -152,6 +165,7 @@ export const AppProvider = ({ children }) => {
     login,
     logout,
     register,
+    refreshUser,
     isLoading,
     isAuthenticated: !!user,
     isUploading,
