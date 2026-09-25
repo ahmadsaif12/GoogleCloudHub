@@ -10,6 +10,7 @@ import {
   UploadIcon,
 } from "lucide-react";
 import { Dropdown, DropdownItem } from "../ui/Dropdown";
+import { ProgressBar } from "../ui/ProgressBar";
 
 const Sidebar = ({
   onCreateFolderClick,
@@ -183,14 +184,11 @@ const Sidebar = ({
             </span>
           </div>
 
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-orange-500 transition-all"
-              style={{
-                width: `${usePercentage}%`,
-              }}
-            />
-          </div>
+          <ProgressBar
+            progress={usePercentage}
+            className="bg-slate-100"
+            color="bg-orange-500"
+          />
 
           <p className="mt-2 text-xs text-slate-400">
             {formatBytes(storageUsed)} of {formatBytes(storageLimit)}
