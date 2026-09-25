@@ -1,6 +1,4 @@
-import { useLocation } from "react-router-dom";
-import { useApp } from "../../context/AppContext";
-import { useRef } from "react";
+import { useLocation, Link } from 'react-router-dom'
 import {
   HardDriveIcon,
   Trash2Icon,
@@ -8,208 +6,109 @@ import {
   PlusIcon,
   FolderPlusIcon,
   UploadIcon,
-} from "lucide-react";
-import { Dropdown, DropdownItem } from "../ui/Dropdown";
-import { ProgressBar } from "../ui/ProgressBar";
+  XIcon,
+} from 'lucide-react'
+import { useApp } from '../../context/AppContext'
+import { Dropdown, DropdownItem } from '../ui/Dropdown'
+import { ProgressBar } from '../ui/ProgressBar'
+import { formatBytes } from '../../assets/assets'
 
-const Sidebar = ({
-  onCreateFolderClick,
-  isMobileOpen,
-  setIsMobileOpen,
-}) => {
-  const { user } = useApp();
-  const location = useLocation();
-  const fileInputRef = useRef(null);
+const navItems = [
+  { label: 'My Drive', path: '/', icon: HardDriveIcon },
+  { label: 'Shared Files', path: '/shared', icon: UsersIcon },
+  { label: 'Trash', path: '/trash', icon: Trash2Icon },
+]
 
-  const storageUsed = Number(user?.storageUsed ?? 0);
-  const storageLimit = Number(user?.storageLimit ?? 1073741824);
+const Sidebar = ({ onCreateFolderClick, onUploadClick, isMobileOpen, setIsMobileOpen }) => {
+  const { user, isUploading, uploadProgress } = useApp()
+  const location = useLocation()
+  const storageUsed = Number(user?.storage_used ?? user?.storageUsed ?? 0)
+  const storageLimit = Number(user?.storage_limit ?? user?.storageLimit ?? 1073741824)
+  const percentage = storageLimit ? Math.min(100, Math.round((storageUsed / storageLimit) * 100)) : 0
 
-  const usePercentage = Math.min(
-    100,
-    Math.round((storageUsed / storageLimit) * 100)
-  );
+  const isActive = (path) => path === '/'
+    ? location.pathname === '/' || location.pathname.startsWith('/drive/')
+    : location.pathname === path
 
-  const navItems = [
-    {
-      label: "My Drive",
-      path: "/",
-      icon: HardDriveIcon,
-    },
-    {
-      label: "Shared Files",
-      path: "/shared",
-      icon: UsersIcon,
-    },
-    {
-      label: "Trash",
-      path: "/trash",
-      icon: Trash2Icon,
-    },
-  ];
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
+  const closeMobile = () => setIsMobileOpen(false)
 
   return (
     <>
-      {/* Mobile overlay */}
       {isMobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-xs md:hidden"
-          onClick={() => setIsMobileOpen(false)}
+        <button
+          type='button'
+          aria-label='Close navigation'
+          className='fixed inset-0 z-40 bg-slate-900/30 md:hidden'
+          onClick={closeMobile}
         />
       )}
-
-      <aside
-        className={`
-          fixed top-0 bottom-0 left-0 z-50
-          w-64
-          bg-white
-          border-r border-slate-200
-          flex flex-col
-          transition-transform duration-300
-          md:translate-x-0
-          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
-      >
-        {/* Logo */}
-        <div className="h-20 px-6 flex items-center border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <div className="text-orange-500 font-bold text-3xl">
-              A
-            </div>
-
-            <div>
-              <h1 className="text-xl font-bold tracking-wide text-slate-800">
-                DRIVEA
-              </h1>
-
-              <p className="text-[9px] tracking-widest text-slate-400">
-                CLOUD STORAGE
-              </p>
-            </div>
-          </div>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex w-40 flex-col border-r border-slate-200 bg-white transition-transform duration-200 md:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className='flex h-14 shrink-0 items-center justify-between border-b border-slate-100 px-3'>
+          <Link to='/' onClick={closeMobile} className='flex items-center gap-2.5' aria-label='Drivea home'>
+            <span className='flex size-8 items-center justify-center text-orange-600' aria-hidden='true'>
+              <svg viewBox='0 0 32 32' className='size-8' fill='currentColor'>
+                <path d='M12.2 3 1.5 24.5h11L23.2 3H12.2Z' />
+                <path d='m17.5 16.5 7.1 14h7.9L25 16.5h-7.5Z' />
+              </svg>
+            </span>
+            <span>
+              <span className='block text-lg font-semibold leading-5 tracking-wide text-slate-800'>DRIVEA</span>
+              <span className='mt-0.5 block text-[9px] tracking-[0.16em] text-slate-500'>CLOUD STORAGE</span>
+            </span>
+          </Link>
+          <button type='button' aria-label='Close menu' onClick={closeMobile} className='rounded-md p-1.5 text-slate-500 hover:bg-slate-100 md:hidden'>
+            <XIcon size={18} />
+          </button>
         </div>
 
-        {/* New Item */}
-        <div className="px-4 pt-5">
+        <div className='px-2.5 pt-3'>
           <Dropdown
-            align="left"
-            className="w-52"
+            align='left'
+            className='w-52'
             trigger={
-              <button
-                type="button"
-                className="
-                  w-full
-                  flex items-center justify-center gap-2
-                  px-4 py-2.5
-                  rounded-md
-                  bg-orange-500
-                  hover:bg-orange-600
-                  text-white
-                  text-sm font-medium
-                  transition-colors
-                "
-              >
-                <PlusIcon size={17} />
+              <button type='button' className='flex h-8 w-fit items-center gap-1.5 rounded-md bg-orange-600 px-2.5 text-xs font-medium text-white transition-colors hover:bg-orange-700'>
+                <PlusIcon size={16} />
                 New Item
               </button>
             }
           >
-            <DropdownItem icon={FolderPlusIcon} onClick={onCreateFolderClick}>
-              New Folder
-            </DropdownItem>
-            <DropdownItem icon={UploadIcon} onClick={handleUploadClick}>
-              Upload File
-            </DropdownItem>
+            <DropdownItem icon={FolderPlusIcon} onClick={onCreateFolderClick}>New Folder</DropdownItem>
+            <DropdownItem icon={UploadIcon} onClick={onUploadClick}>Upload File</DropdownItem>
           </Dropdown>
-
-          {/* Hidden file input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            multiple
-          />
         </div>
 
-        {/* Navigation */}
-        <nav className="mt-5 px-3">
+        <nav className='mt-3 px-2 pt-0.5' aria-label='Main navigation'>
           {navItems.map((item) => {
-            const Icon = item.icon;
-
-            const isActive =
-              location.pathname === item.path ==="/" ?location.pathname ==="/" || location.pathname.startsWith("/drive"): location.pathname === item.path;
-
+            const Icon = item.icon
+            const active = isActive(item.path)
             return (
-              <button
+              <Link
                 key={item.path}
-                onClick={() => {
-                  window.location.href = item.path;
-                  setIsMobileOpen(false);
-                }}
-                className={`
-                  w-full
-                  flex items-center gap-3
-                  px-3 py-2.5
-                  mb-1
-                  rounded-r-md
-                  text-sm
-                  transition-colors
-                  ${
-                    isActive
-                      ? "bg-orange-50 text-orange-600 border-r-2 border-orange-500"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }
-                `}
+                to={item.path}
+                onClick={closeMobile}
+                aria-current={active ? 'page' : undefined}
+                className={`mb-1 flex h-7 items-center gap-2 rounded-r-md border-r-2 px-3 text-sm transition-colors ${active ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
               >
-                <Icon size={17} strokeWidth={1.8} />
-
-                <span>{item.label}</span>
-              </button>
-            );
+                <Icon size={16} strokeWidth={1.8} />
+                {item.label}
+              </Link>
+            )
           })}
         </nav>
 
-        {/* Storage */}
-        <div className="mt-auto p-5">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">
-              Storage
-            </span>
-
-            <span className="text-xs text-slate-400">
-              {usePercentage}%
-            </span>
+        <div className='mt-auto border-t border-slate-200 bg-slate-50/80 px-3 py-3'>
+          <div className='mb-2 flex items-center justify-between'>
+            <span className='text-xs font-medium text-slate-600'>Storage</span>
+            <span className='text-[11px] font-medium text-slate-500'>{percentage}%</span>
           </div>
-
-          <ProgressBar
-            progress={usePercentage}
-            className="bg-slate-100"
-            color="bg-orange-500"
-          />
-
-          <p className="mt-2 text-xs text-slate-400">
-            {formatBytes(storageUsed)} of {formatBytes(storageLimit)}
+          <ProgressBar progress={isUploading ? uploadProgress : percentage} className='bg-slate-200' color='bg-orange-600' />
+          <p className='mt-1.5 text-[10px] text-slate-500'>
+            {isUploading ? `Uploading... ${uploadProgress}%` : `${formatBytes(storageUsed)} of ${formatBytes(storageLimit)} used`}
           </p>
         </div>
       </aside>
     </>
-  );
-};
+  )
+}
 
-const formatBytes = (bytes) => {
-  if (!bytes) return "0 B";
-
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const index = Math.floor(
-    Math.log(bytes) / Math.log(1024)
-  );
-
-  return `${(bytes / Math.pow(1024, index)).toFixed(
-    index === 0 ? 0 : 1
-  )} ${units[index]}`;
-};
-
-export default Sidebar;
+export default Sidebar
