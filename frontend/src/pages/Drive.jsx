@@ -6,6 +6,7 @@ import { useDrive } from '../hooks/useDrive'
 import api from '../config/api'
 import FolderCard from '../components/folders/FolderCard'
 import FileGrid from '../components/files/FileGrid'
+import FilePreview from '../components/files/FilePreview'
 import BreadCrumbs from '../components/layout/BreadCrumbs'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
@@ -247,19 +248,12 @@ const Drive = () => {
         </div>
       </Modal>
 
-      <Modal isOpen={dialog?.type === 'preview'} onClose={() => setDialog(null)} title={dialog?.item?.name || 'Preview'} maxWidth='max-w-5xl'>
-        <div className='flex min-h-64 items-center justify-center overflow-hidden rounded-lg bg-slate-100'>
-          {dialog?.item?.mime_type?.startsWith('image/') ? (
-            <img src={previewUrl} alt={dialog.item.name} className='max-h-[70vh] max-w-full object-contain' />
-          ) : dialog?.item?.mime_type?.startsWith('video/') ? (
-            <video src={previewUrl} controls className='max-h-[70vh] max-w-full' />
-          ) : dialog?.item?.mime_type?.startsWith('audio/') ? (
-            <audio src={previewUrl} controls className='w-full max-w-lg' />
-          ) : (
-            <iframe title={`Preview ${dialog?.item?.name || 'file'}`} src={previewUrl} className='h-[65vh] w-full border-0 bg-white' />
-          )}
-        </div>
-      </Modal>
+      <FilePreview
+        open={dialog?.type === 'preview'}
+        file={dialog?.item}
+        previewUrl={previewUrl}
+        onClose={() => setDialog(null)}
+      />
 
       <ConfirmDialog
         isOpen={dialog?.type === 'delete'}
