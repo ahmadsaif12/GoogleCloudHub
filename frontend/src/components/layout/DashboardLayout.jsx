@@ -106,7 +106,7 @@ const DashboardLayout = () => {
         onCreateFolderClick={openCreate}
         onUploadClick={openUpload}
       />
-      <div className='flex min-h-screen flex-col md:pl-40'>
+      <div className='flex min-h-screen flex-col md:pl-56'>
         <Header onMobileMenuToggle={() => setIsMobileOpen(true)} />
         <main className='min-h-0 flex-1 p-4'>
           <Outlet />

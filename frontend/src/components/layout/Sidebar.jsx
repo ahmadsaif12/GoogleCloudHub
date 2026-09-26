@@ -42,7 +42,7 @@ const Sidebar = ({ onCreateFolderClick, onUploadClick, isMobileOpen, setIsMobile
           onClick={closeMobile}
         />
       )}
-      <aside className={`fixed inset-y-0 left-0 z-50 flex w-40 flex-col border-r border-slate-200 bg-white transition-transform duration-200 md:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex w-56 flex-col border-r border-slate-200 bg-white transition-transform duration-200 md:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className='flex h-14 shrink-0 items-center justify-between border-b border-slate-100 px-3'>
           <Link to='/' onClick={closeMobile} className='flex items-center gap-2.5' aria-label='Drivea home'>
             <span className='flex size-8 items-center justify-center text-orange-600' aria-hidden='true'>

@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
-import { CopyIcon, FileIcon, FolderIcon, Link2Icon, LoaderCircleIcon, Trash2Icon } from 'lucide-react'
+import { CopyIcon, ExternalLinkIcon, FileIcon, FolderIcon, Link2Icon, LoaderCircleIcon, Trash2Icon, UsersIcon } from 'lucide-react'
 import api from '../config/api'
-import { formatBytes } from '../assets/assets'
-import { Button } from '../components/ui/Button'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 
@@ -62,39 +60,72 @@ const SharedWithMe = () => {
 
   return (
     <div className='mx-auto w-full max-w-[1500px]'>
-      <div className='mb-5'>
-        <h1 className='text-lg font-semibold text-slate-800'>Shared Files</h1>
-        <p className='mt-1 text-sm text-slate-500'>Manage links you’ve shared.</p>
+      <div className='mb-5 flex items-center gap-3'>
+        <span className='flex size-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600'>
+          <UsersIcon size={19} strokeWidth={1.8} />
+        </span>
+        <div>
+          <h1 className='text-lg font-semibold leading-5 text-slate-800'>Shared Links</h1>
+          <p className='mt-1 text-xs text-slate-500'>Share links you have created</p>
+        </div>
       </div>
       {isLoading ? (
         <div className='flex min-h-48 items-center justify-center gap-2 text-sm text-slate-500'><LoaderCircleIcon size={18} className='animate-spin text-orange-600' />Loading shared files...</div>
       ) : shares.length === 0 ? (
         <div className='rounded-xl border border-slate-200 bg-white'><EmptyState icon={Link2Icon} title='No shared links yet' description='Create a share link from the actions menu on any file or folder.' /></div>
       ) : (
-        <div className='overflow-hidden rounded-xl border border-slate-200 bg-white'>
-          <div className='hidden grid-cols-[minmax(0,1.5fr)_120px_150px_auto] items-center gap-4 border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-500 sm:grid'>
-            <span>Item</span><span>Type</span><span>Created</span><span>Actions</span>
-          </div>
+        <div className='grid grid-cols-1 gap-3 xl:grid-cols-2'>
           {shares.map((share) => {
             const resource = share.resource || {}
             const isFolder = share.resource_type === 'folder'
             const Icon = isFolder ? FolderIcon : FileIcon
+            const resourceName = resource.name || (isFolder ? 'Shared folder' : 'Shared file')
+            const shareUrl = `/s/${share.token}`
+            const createdDate = share.created_at ? format(new Date(share.created_at), 'MMM d, yyyy') : '—'
+
             return (
-              <div key={share.id} className='grid grid-cols-1 items-center gap-3 border-b border-slate-100 px-4 py-3 text-center last:border-b-0 sm:grid-cols-[minmax(0,1.5fr)_120px_150px_auto] sm:items-center sm:gap-4'>
-                <div className='flex min-w-0 items-center justify-center gap-3 text-center sm:justify-start sm:text-left'>
-                  <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${isFolder ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-500'}`}><Icon size={16} /></span>
-                  <div className='min-w-0'>
-                    <p className='truncate text-sm font-medium text-slate-800'>{resource.name || (isFolder ? 'Shared folder' : 'Shared file')}</p>
-                    <p className='text-xs text-slate-500'>{!isFolder && resource.size ? formatBytes(resource.size) : 'Share link'}</p>
-                  </div>
+              <article key={share.id} className='min-w-0 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 sm:px-4'>
+                <div className='flex min-w-0 items-center gap-2.5'>
+                  <Icon size={21} strokeWidth={1.8} className={isFolder ? 'shrink-0 text-amber-600' : 'shrink-0 text-rose-600'} />
+                  <h2 className='min-w-0 flex-1 truncate text-sm font-semibold text-slate-800'>{resourceName}</h2>
+                  <button
+                    type='button'
+                    aria-label={`Revoke link for ${resourceName}`}
+                    title='Revoke link'
+                    onClick={() => setRevokeTarget(share)}
+                    className='flex size-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600'
+                  >
+                    <Trash2Icon size={15} />
+                  </button>
                 </div>
-                <span className='text-xs text-slate-500'>{isFolder ? 'Folder' : 'File'}</span>
-                <span className='text-xs text-slate-500'>{share.created_at ? format(new Date(share.created_at), 'MMM d, yyyy') : '—'}</span>
-                <div className='flex items-center justify-center gap-2 sm:justify-end'>
-                  <Button size='sm' variant='secondary' icon={CopyIcon} onClick={() => copyLink(share)}>Copy link</Button>
-                  <button type='button' aria-label={`Revoke link for ${resource.name || 'item'}`} onClick={() => setRevokeTarget(share)} className='rounded-md p-2 text-slate-500 hover:bg-red-50 hover:text-red-600'><Trash2Icon size={15} /></button>
+
+                <dl className='mt-3 space-y-1 text-xs leading-4 text-slate-500'>
+                  <div className='flex gap-1'><dt>Access:</dt><dd className='text-slate-700'>Anyone with link</dd></div>
+                  <div className='flex gap-1'><dt>Views:</dt><dd className='text-slate-700'>{Number(share.access_count ?? share.views ?? 0)}</dd></div>
+                  <div className='flex gap-1'><dt>Created:</dt><dd className='text-slate-700'>{createdDate}</dd></div>
+                </dl>
+
+                <div className='mt-3 flex items-center justify-between border-t border-slate-100 pt-2'>
+                  <button
+                    type='button'
+                    onClick={() => copyLink(share)}
+                    className='inline-flex min-h-7 items-center gap-1.5 rounded-md px-1 text-xs font-medium text-orange-700 transition-colors hover:bg-orange-50'
+                  >
+                    <CopyIcon size={14} />
+                    Copy Link
+                  </button>
+                  <a
+                    href={shareUrl}
+                    target='_blank'
+                    rel='noreferrer'
+                    aria-label={`Open shared link for ${resourceName}`}
+                    title='Open shared link'
+                    className='flex size-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700'
+                  >
+                    <ExternalLinkIcon size={14} />
+                  </a>
                 </div>
-              </div>
+              </article>
             )
           })}
         </div>
