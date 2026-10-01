@@ -2,6 +2,7 @@ import express from "express"
 import "dotenv/config"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import { initDB } from "./config/db.js"
 
 const app = express()
 
@@ -22,4 +23,10 @@ app.use((err, _req,res,_next)=>{
   res.status(err.status || 500).json({error: err.message})|| "something went wronf";
   })
 
-app.listen(PORT, ()=>{console.log(`server running on port ${PORT}`)})
+  //initalize db and start the server
+  initDB().then(()=>{
+    app.listen(PORT, ()=>console.log(`Server is running on port ${PORT}`))
+  }).catch((err)=>{
+    console.error("Failed to initialize the database:", err);
+    process.exit(1);
+  })
