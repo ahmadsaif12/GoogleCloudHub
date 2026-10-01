@@ -3,6 +3,7 @@ import "dotenv/config"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import { initDB } from "./config/db.js"
+import authRouter from "./routes/authRoutes.js"
 
 const app = express()
 
@@ -16,6 +17,7 @@ app.use(express.json({limit: "100mb"}))
 
 //api routes
 app.get("/", (req,res)=>res.send("Server is running.."))
+app.use("/api/auth", authRouter)
 const PORT = process.env.PORT || 3000;
 
 //error handling middleware
