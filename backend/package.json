@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "server": "nodemon server.js"
+    "start": "NODE_OPTIONS=--network-family-autoselection-attempt-timeout=5000 node server.js",
+    "dev": "NODE_OPTIONS=--network-family-autoselection-attempt-timeout=5000 nodemon server.js",
+    "server": "NODE_OPTIONS=--network-family-autoselection-attempt-timeout=5000 nodemon server.js"
   },
   "keywords": [],
   "author": "Saif Ahmad",

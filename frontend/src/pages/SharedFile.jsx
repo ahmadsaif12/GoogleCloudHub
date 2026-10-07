@@ -36,7 +36,9 @@ const SharedFile = () => {
 
   const previewFolderFile = async (file) => {
     try {
-      const { data } = await api.get(`/api/files/${file.id}/preview`)
+      const { data } = await api.get(`/api/files/${file.id}/preview`, {
+        params: { share_token: token },
+      })
       setPreviewFile(file)
       setPreviewUrl(data.preview_url || data.url)
     } catch (error) {
